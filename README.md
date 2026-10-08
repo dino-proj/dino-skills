@@ -14,13 +14,13 @@ Open-source [Agent Skills](https://agentskills.io/) for coding agents (GitHub Co
 
 ```bash
 # List skills in this repo
-npx skills add <owner>/dino-skills --list
+npx skills add dino-proj/dino-skills --list
 
 # Install one skill into the current project
-npx skills add <owner>/dino-skills --skill doubao-seedream
+npx skills add dino-proj/dino-skills --skill doubao-seedream
 
 # Install globally for a specific agent
-npx skills add <owner>/dino-skills --skill doubao-seedream -g -a github-copilot
+npx skills add dino-proj/dino-skills --skill doubao-seedream -g -a github-copilot
 ```
 
 ## doubao-seedream setup
