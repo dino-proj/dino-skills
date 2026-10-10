@@ -1,6 +1,6 @@
 ---
 name: mimo-tts
-description: 'Synthesize speech (text to speech) with Xiaomi MiMo-V2.5-TTS preset voices, with natural-language style control, audio tags, dialects and singing. Use for TTS, 语音合成, 文本转语音, 配音, 朗读, MiMo, 小米, mimo-v2.5-tts. 使用小米 MiMo-V2.5-TTS 预置音色进行语音合成。'
+description: 'Synthesize speech (text to speech) with Xiaomi MiMo-V2.5-TTS preset voices, with natural-language style control, audio tags, dialects, singing, and built-in English teaching read-aloud styles (standard and slow). Use for TTS, 语音合成, 文本转语音, 配音, 朗读, 英语朗读, 英语教学, 慢速, MiMo, 小米, mimo-v2.5-tts. 使用小米 MiMo-V2.5-TTS 预置音色进行语音合成，含英语教学标准/慢速朗读。'
 argument-hint: 'Text to speak, output path, and optional voice / style'
 user-invocable: true
 disable-model-invocation: false
@@ -45,11 +45,51 @@ node "$SKILL_DIR"/scripts/synthesize.mjs \
   --output ./audio/news.wav
 ```
 
+## English teaching voices
+
+For English learning material read aloud to young learners, use `--style` with one of the four English voices. `--style` sends a tuned instruction as the user message and defaults the voice to `Mia`.
+
+| Voice | Gender | Notes |
+|---|---|---|
+| `Mia` | Female | Default; US accent |
+| `Milo` | Male | US accent |
+| `Chloe` | Female | Alternative, US accent |
+| `Dean` | Male | Alternative, US accent |
+
+| Style | Pace | Use for |
+|---|---|---|
+| `teacher` | Natural, about 110–120 wpm | Standard read-aloud, stories, dialogues |
+| `teacher-slow` | Clearly slower, about 85 wpm, long phrase pauses | Beginners, shadowing, follow-along reading |
+
+The wpm values are targets; MiMo has no numeric speed parameter, so pace comes only from the instruction. The exact instructions sent:
+
+- `teacher`:
+  > A warm, encouraging English teacher reading a story aloud to young beginners. Clear, natural American English at a natural, moderately lively pace — not slow, not rushed. Keep an even, steady tempo the whole way through; do NOT speed up toward the end — the last sentence should be as unhurried as the first. Pause at each sentence end, but keep the words within a sentence connected. Friendly and clear, never flat or robotic.
+- `teacher-slow`:
+  > A warm, patient English teacher reading a story aloud to one young child at a calm, gentle storytelling pace, clearly slower than normal speech, so the child can follow along. Clear, natural American English. Leave a long, clear pause between phrases and a full pause after every sentence. Keep a calm, unhurried pace; do NOT speed up. Gentle and warm.
+
+Prepare the text before synthesis; pauses follow punctuation and line breaks:
+- End every line with punctuation; add a period where it is missing.
+- Put a title in sentence case ending with a period, then a blank line before the body.
+- Spell out letter-by-letter abbreviations as they should sound, e.g. `ID` → `I-D`.
+- Do not add `(style)` tags to the text; the `--style` instruction already sets the delivery.
+
+```bash
+node "$SKILL_DIR"/scripts/synthesize.mjs \
+  --style teacher-slow \
+  --voice Milo \
+  --text-file ./lesson-01.txt \
+  --output ./audio/lesson-01-slow.mp3
+```
+
+For custom variants (e.g. word-by-word dictation), use `--instruction` instead and keep the same structure: who is speaking, to whom, pace, pauses, and "do NOT speed up".
+
 ## Options
 
 - `--text <text>` / `--text-file <path>`: Required text to speak (sent as the `assistant` message).
 - `--instruction <text>` / `--instruction-file <path>`: Optional style direction or dialogue context (sent as the `user` message; never spoken).
-- `--voice <id>`: Preset voice. Default `mimo_default` (冰糖 on the China cluster, Mia elsewhere).
+- `--style <teacher|teacher-slow>`: Built-in English teaching instruction; cannot be combined with `--instruction`; requires an English voice.
+- `--voice <id>`: Preset voice. Default `mimo_default` (冰糖 on the China cluster, Mia elsewhere), or `Mia` with `--style`.
 - `--format <wav|mp3|pcm16>`: Defaults from the output extension (`.wav`, `.mp3`, `.pcm`), then `wav`. `pcm16` is raw 24 kHz 16-bit little-endian mono without a header.
 - `--output <path>`: Required output file; parent directories are created.
 - `--check-credentials`: Report credential source only; no API request.

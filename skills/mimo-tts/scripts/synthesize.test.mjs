@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { parseArgs, buildRequest, extractAudio, MODEL } from './synthesize.mjs';
+import { parseArgs, buildRequest, extractAudio, MODEL, STYLES } from './synthesize.mjs';
 
 const request = (...argv) => buildRequest(parseArgs(argv));
 
@@ -40,6 +40,16 @@ test('rejects invalid combinations before any API request', async () => {
   await assert.rejects(request('--text', 'hi', '--format', 'flac', '--output', '/tmp/a.wav'), /--format/);
   assert.throws(() => parseArgs(['--voice-design']), /Unknown option/);
   assert.throws(() => parseArgs(['--text']), /Missing value/);
+});
+
+test('teaching styles send the built-in instruction and default to Mia', async () => {
+  const body = await request('--style', 'teacher-slow', '--text', 'The cat sat.', '--output', '/tmp/a.mp3');
+  assert.deepEqual(body.messages[0], { role: 'user', content: STYLES['teacher-slow'] });
+  assert.equal(body.audio.voice, 'Mia');
+  assert.equal((await request('--style', 'teacher', '--voice', 'Dean', '--text', 'Hi.', '--output', '/tmp/a.mp3')).audio.voice, 'Dean');
+  await assert.rejects(request('--style', 'fast', '--text', 'Hi.', '--output', '/tmp/a.mp3'), /Unknown style/);
+  await assert.rejects(request('--style', 'teacher', '--instruction', 'x', '--text', 'Hi.', '--output', '/tmp/a.mp3'), /either --style/);
+  await assert.rejects(request('--style', 'teacher', '--voice', '冰糖', '--text', 'Hi.', '--output', '/tmp/a.mp3'), /English voice/);
 });
 
 test('extracts base64 audio and fails without it', () => {

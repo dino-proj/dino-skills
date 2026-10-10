@@ -8,6 +8,11 @@ import { resolveApiKey } from './credentials.mjs';
 const API_URL = 'https://api.xiaomimimo.com/v1/chat/completions';
 export const MODEL = 'mimo-v2.5-tts';
 export const PRESET_VOICES = ['mimo_default', '冰糖', '茉莉', '苏打', '白桦', 'Mia', 'Chloe', 'Milo', 'Dean'];
+export const ENGLISH_VOICES = ['Mia', 'Chloe', 'Milo', 'Dean'];
+export const STYLES = {
+  teacher: 'A warm, encouraging English teacher reading a story aloud to young beginners. Clear, natural American English at a natural, moderately lively pace — not slow, not rushed. Keep an even, steady tempo the whole way through; do NOT speed up toward the end — the last sentence should be as unhurried as the first. Pause at each sentence end, but keep the words within a sentence connected. Friendly and clear, never flat or robotic.',
+  'teacher-slow': 'A warm, patient English teacher reading a story aloud to one young child at a calm, gentle storytelling pace, clearly slower than normal speech, so the child can follow along. Clear, natural American English. Leave a long, clear pause between phrases and a full pause after every sentence. Keep a calm, unhurried pace; do NOT speed up. Gentle and warm.',
+};
 
 function usage() {
   console.log(`Usage:
@@ -18,7 +23,8 @@ Options:
   --text-file <path>            Read the text to speak from a UTF-8 file
   --instruction <text>          Style instruction (user message)
   --instruction-file <path>     Read the instruction from a UTF-8 file
-  --voice <id>                  Preset voice (default mimo_default): ${PRESET_VOICES.join(', ')}
+  --style <name>                Built-in English teaching instruction: ${Object.keys(STYLES).join(', ')}
+  --voice <id>                  Preset voice (default mimo_default, or Mia with --style): ${PRESET_VOICES.join(', ')}
   --format <wav|mp3|pcm16>      Output format; default from the output extension, then wav
   --check-credentials           Check credential access without an API call
   --help                        Show this help`);
@@ -40,6 +46,7 @@ export function parseArgs(argv) {
       case '--text-file': options.textFile = next(); break;
       case '--instruction': options.instruction = next(); break;
       case '--instruction-file': options.instructionFile = next(); break;
+      case '--style': options.style = next(); break;
       case '--voice': options.voice = next(); break;
       case '--format': options.format = next().toLowerCase(); break;
       case '--output': options.output = next(); break;
@@ -71,11 +78,18 @@ export async function buildRequest(options) {
   const instruction = await readOptionalText(options.instruction, options.instructionFile, 'instruction');
   if (options.voice && !PRESET_VOICES.includes(options.voice)) throw new Error(`Unknown preset voice. Use one of: ${PRESET_VOICES.join(', ')}`);
   if (!text) throw new Error('--text or --text-file is required.');
+  if (options.style) {
+    if (!STYLES[options.style]) throw new Error(`Unknown style. Use one of: ${Object.keys(STYLES).join(', ')}`);
+    if (instruction) throw new Error('Use either --style or --instruction, not both.');
+    if (options.voice && !ENGLISH_VOICES.includes(options.voice)) throw new Error(`--style needs an English voice: ${ENGLISH_VOICES.join(', ')}`);
+  }
 
   const messages = [];
-  if (instruction) messages.push({ role: 'user', content: instruction });
+  const userContent = options.style ? STYLES[options.style] : instruction;
+  if (userContent) messages.push({ role: 'user', content: userContent });
   messages.push({ role: 'assistant', content: text });
-  return { model: MODEL, messages, audio: { format: outputFormat(options), voice: options.voice || 'mimo_default' } };
+  const voice = options.voice || (options.style ? 'Mia' : 'mimo_default');
+  return { model: MODEL, messages, audio: { format: outputFormat(options), voice } };
 }
 
 export function extractAudio(payload) {
