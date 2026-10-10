@@ -14,7 +14,8 @@ guard CommandLine.arguments.count == 1 else {
     fail("This script accepts no arguments. Enter the key only at the hidden prompt.")
 }
 
-print("Save Ark API key to your default macOS keychain (replaces this skill's existing entry).")
+print("Save the Doubao (Volcengine) API key to your default macOS keychain.")
+print("The entry is shared by doubao-seedream, doubao-tts and doubao-seed-audio and replaces any existing one.")
 print("Input is hidden. An empty value cancels without changing Keychain.")
 guard let input = getpass("ARK_API_KEY: ") else {
     fail("Could not read hidden input.")
@@ -35,7 +36,7 @@ let query: [String: Any] = [
 ]
 let attributes: [String: Any] = [
     kSecValueData as String: Data(bytes: input, count: inputLength),
-    kSecAttrLabel as String: "Doubao Seedream - Ark API Key",
+    kSecAttrLabel as String: "Doubao - Volcengine API Key",
 ]
 var result = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
 if result == errSecItemNotFound {

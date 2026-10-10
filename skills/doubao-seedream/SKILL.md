@@ -16,7 +16,7 @@ Generate or edit bitmap images through the Volcengine Ark Images API using the b
 
 ## Security
 
-- Read credentials through `scripts/credentials.mjs`: prefer `ARK_API_KEY`; on macOS, fall back to the generic-password Keychain item with service `com.github.copilot.doubao-seedream` and account `ARK_API_KEY`.
+- Read credentials through `scripts/credentials.mjs`: prefer `ARK_API_KEY`; on macOS, fall back to the generic-password Keychain item with service `com.github.copilot.doubao-seedream` and account `ARK_API_KEY`. The same key and entry are shared with `doubao-tts` and `doubao-seed-audio`.
 - Never ask the user to paste an API key into chat.
 - Never print, log, commit, or save the API key in plaintext, command arguments, shell history, prompts, or tool responses. Keychain is the only permitted persistent credential store for the bundled scripts.
 - Never run `security find-generic-password -w` directly in a visible terminal tool call. The credential helper captures its output privately in the Node process and emits only sanitized errors.
