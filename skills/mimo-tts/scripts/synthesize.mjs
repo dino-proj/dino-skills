@@ -105,12 +105,12 @@ async function main() {
     return;
   }
   if (options.checkCredentials) {
-    const { source } = await resolveApiKey();
+    const { source } = await resolveApiKey('MIMO_API_KEY');
     console.log(`Credentials available (${source}). No API request was made.`);
     return;
   }
   const body = await buildRequest(options);
-  const { apiKey } = await resolveApiKey();
+  const { apiKey } = await resolveApiKey('MIMO_API_KEY');
 
   const response = await fetch(API_URL, {
     method: 'POST',

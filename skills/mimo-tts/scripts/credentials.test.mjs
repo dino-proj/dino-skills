@@ -1,29 +1,33 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { resolveApiKey, KEYCHAIN_ACCOUNT, KEYCHAIN_SERVICE } from './credentials.mjs';
+import { resolveApiKey, storeCommand, KEYCHAIN_SERVICE } from './credentials.mjs';
+
+const ACCOUNT = 'TEST_API_KEY';
 
 test('environment takes precedence without reading Keychain', async () => {
-  const result = await resolveApiKey({ env: { MIMO_API_KEY: ' test-key ' }, platform: 'darwin', run: () => assert.fail('Keychain must not run') });
+  const result = await resolveApiKey(ACCOUNT, { env: { [ACCOUNT]: ' test-key ' }, platform: 'darwin', run: () => assert.fail('Keychain must not run') });
   assert.deepEqual(result, { apiKey: 'test-key', source: 'environment' });
 });
 
-test('macOS reads only the skill-specific entry without a shell', async () => {
-  const result = await resolveApiKey({ env: {}, platform: 'darwin', run: async (command, args, options) => {
+test('macOS reads the shared service with the key name as account, without a shell', async () => {
+  const result = await resolveApiKey(ACCOUNT, { env: {}, platform: 'darwin', run: async (command, args, options) => {
     assert.equal(command, '/usr/bin/security');
-    assert.deepEqual(args, ['find-generic-password', '-s', KEYCHAIN_SERVICE, '-a', KEYCHAIN_ACCOUNT, '-w']);
+    assert.deepEqual(args, ['find-generic-password', '-s', KEYCHAIN_SERVICE, '-a', ACCOUNT, '-w']);
     assert.equal(options.shell, undefined);
     return { stdout: 'test-key\n' };
   } });
   assert.deepEqual(result, { apiKey: 'test-key', source: 'macOS Keychain' });
 });
 
-test('missing Keychain entry gives setup instructions', async () => {
-  await assert.rejects(resolveApiKey({ env: {}, platform: 'darwin', run: async () => { throw Object.assign(new Error('private-output'), { code: 44 }); } }), /Run: swift/);
+test('missing Keychain entry gives a prompt-based store command without a key value', async () => {
+  assert.equal(storeCommand(ACCOUNT), `security add-generic-password -U -s dino-skills -a ${ACCOUNT} -w`);
+  await assert.rejects(resolveApiKey(ACCOUNT, { env: {}, platform: 'darwin', run: async () => { throw Object.assign(new Error('private-output'), { code: 44 }); } }),
+    error => error.message.includes(storeCommand(ACCOUNT)));
 });
 
 test('denied, timed out and cancelled reads never expose subprocess output', async () => {
   for (const code of [36, 128, 'ETIMEDOUT']) {
-    await assert.rejects(resolveApiKey({ env: {}, platform: 'darwin', run: async () => { throw Object.assign(new Error('private-output'), { code, stdout: 'test-key', stderr: 'private-output' }); } }), error => {
+    await assert.rejects(resolveApiKey(ACCOUNT, { env: {}, platform: 'darwin', run: async () => { throw Object.assign(new Error('private-output'), { code, stdout: 'test-key', stderr: 'private-output' }); } }), error => {
       assert.match(error.message, /Keychain access failed/);
       assert.doesNotMatch(error.message, /test-key|private-output/);
       return true;
@@ -32,9 +36,9 @@ test('denied, timed out and cancelled reads never expose subprocess output', asy
 });
 
 test('empty entries fail closed', async () => {
-  await assert.rejects(resolveApiKey({ env: {}, platform: 'darwin', run: async () => ({ stdout: '\n' }) }), /entry is empty/);
+  await assert.rejects(resolveApiKey(ACCOUNT, { env: {}, platform: 'darwin', run: async () => ({ stdout: '\n' }) }), /entry is empty/);
 });
 
 test('non-macOS requires an environment variable', async () => {
-  await assert.rejects(resolveApiKey({ env: {}, platform: 'linux', run: () => assert.fail('Must not run') }), /only on macOS/);
+  await assert.rejects(resolveApiKey(ACCOUNT, { env: {}, platform: 'linux', run: () => assert.fail('Must not run') }), /only on macOS/);
 });

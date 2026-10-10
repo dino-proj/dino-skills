@@ -1,32 +1,34 @@
 import { execFile } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
-export const KEYCHAIN_SERVICE = 'com.github.copilot.mimo-tts';
-export const KEYCHAIN_ACCOUNT = 'MIMO_API_KEY';
+// One Keychain service for every dino-skills key; the account is the environment variable name.
+export const KEYCHAIN_SERVICE = 'dino-skills';
 const execute = promisify(execFile);
-const STORE_KEY_SCRIPT = fileURLToPath(new URL('./store-api-key.swift', import.meta.url));
 
-export async function resolveApiKey({ env = process.env, platform = process.platform, run = execute } = {}) {
-  const environmentKey = env.MIMO_API_KEY?.trim();
+export function storeCommand(account) {
+  return `security add-generic-password -U -s ${KEYCHAIN_SERVICE} -a ${account} -w`;
+}
+
+export async function resolveApiKey(account, { env = process.env, platform = process.platform, run = execute } = {}) {
+  const environmentKey = env[account]?.trim();
   if (environmentKey) return { apiKey: environmentKey, source: 'environment' };
   if (platform !== 'darwin') {
-    throw new Error('MIMO_API_KEY is not set. Keychain fallback is available only on macOS.');
+    throw new Error(`${account} is not set. Keychain fallback is available only on macOS.`);
   }
 
   let result;
   try {
     result = await run('/usr/bin/security', [
-      'find-generic-password', '-s', KEYCHAIN_SERVICE, '-a', KEYCHAIN_ACCOUNT, '-w',
+      'find-generic-password', '-s', KEYCHAIN_SERVICE, '-a', account, '-w',
     ], { encoding: 'utf8', timeout: 120_000, maxBuffer: 64 * 1024 });
   } catch (error) {
     if (error.code === 44) {
-      throw new Error(`No MiMo key in Keychain. Run: swift "${STORE_KEY_SCRIPT}"`);
+      throw new Error(`No ${account} in Keychain. Run this in a terminal and type the key at the hidden prompt: ${storeCommand(account)}`);
     }
     throw new Error('Keychain access failed or was cancelled. Unlock your login keychain and approve access locally, then retry.');
   }
 
   const apiKey = result.stdout.trim();
-  if (!apiKey) throw new Error('The MiMo Keychain entry is empty. Run store-api-key.swift to replace it.');
+  if (!apiKey) throw new Error(`The ${account} Keychain entry is empty. Replace it with: ${storeCommand(account)}`);
   return { apiKey, source: 'macOS Keychain' };
 }
