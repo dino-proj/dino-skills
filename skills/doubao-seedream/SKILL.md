@@ -16,11 +16,11 @@ Generate or edit bitmap images through the Volcengine Ark Images API using the b
 
 ## Security
 
-- Read credentials through `scripts/credentials.mjs`: prefer `ARK_API_KEY`; on macOS, fall back to the generic-password Keychain item with service `com.github.copilot.doubao-seedream` and account `ARK_API_KEY`. The same key and entry are shared with `doubao-tts` and `doubao-seed-audio`.
+- Read credentials through `scripts/credentials.mjs`: prefer `ARK_API_KEY`; on macOS, fall back to the generic-password Keychain item with service `dino-skills` and account `ARK_API_KEY`. The same key and entry are shared with `doubao-tts` and `doubao-seed-audio`.
 - Never ask the user to paste an API key into chat.
 - Never print, log, commit, or save the API key in plaintext, command arguments, shell history, prompts, or tool responses. Keychain is the only permitted persistent credential store for the bundled scripts.
 - Never run `security find-generic-password -w` directly in a visible terminal tool call. The credential helper captures its output privately in the Node process and emits only sanitized errors.
-- Save or rotate the key with `swift "$SKILL_DIR"/scripts/store-api-key.swift`. It accepts hidden terminal input and uses Security APIs directly, never secret-bearing subprocess arguments. The user must type the key directly into the terminal; stop the agent turn at the secret prompt. Do not collect it with chat or question tools.
+- Save or rotate the key by having the user run `security add-generic-password -U -s dino-skills -a ARK_API_KEY -w` in their own terminal. With `-w` last, macOS prompts for the key with hidden input, so it never appears in command arguments or shell history; never append the key after `-w`. Stop the agent turn at the prompt. Do not collect the key with chat or question tools.
 - If macOS asks for Keychain authorization or a password, the user handles that locally. Do not bypass access controls, unlock the keychain programmatically, or grant all applications access.
 - Missing credentials or denied access are blockers. Do not search project `.env` files for substitute keys. On non-macOS systems, use `ARK_API_KEY` supplied by the user outside chat.
 
@@ -31,7 +31,7 @@ Generate or edit bitmap images through the Volcengine Ark Images API using the b
    ```bash
   node "$SKILL_DIR"/scripts/generate-image.mjs --check-credentials
    ```
-  This checks local access, not whether the key is accepted by Ark. If missing on macOS, run the hidden-input setup command above and let the user enter the key directly in their terminal. The entry is user-level and shared across projects; existing environment variables take precedence.
+  This checks local access, not whether the key is accepted by Ark. If missing on macOS, have the user run the `security add-generic-password` command above and let the user enter the key directly in their terminal. The entry is user-level and shared across projects; existing environment variables take precedence.
 3. Write a concrete prompt. Include composition, subject, style, palette, lighting, camera/view, aspect ratio, and exclusions. For presentation images, request no embedded text unless the user explicitly needs it.
 4. Run [generate-image.mjs](./scripts/generate-image.mjs) with Node.js.
 5. Inspect the generated image with the image viewing tool. If it misses the brief, refine the prompt and regenerate to a new path so the prior result is preserved.
