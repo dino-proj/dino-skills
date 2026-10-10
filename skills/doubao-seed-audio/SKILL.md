@@ -18,11 +18,11 @@ This skill is for **prompt-driven audio creation**. To simply read text aloud wi
 
 ## Security
 
-- Read credentials through `scripts/credentials.mjs`: prefer `ARK_API_KEY`; on macOS, fall back to the generic-password Keychain item with service `com.github.copilot.doubao-seedream` and account `ARK_API_KEY`. One Doubao (Volcengine) key and entry are shared by `doubao-seedream`, `doubao-tts` and this skill.
+- Read credentials through `scripts/credentials.mjs`: prefer `ARK_API_KEY`; on macOS, fall back to the generic-password Keychain item with service `dino-skills` and account `ARK_API_KEY`. One Doubao (Volcengine) key and entry are shared by `doubao-seedream`, `doubao-tts` and this skill.
 - Never ask the user to paste an API key into chat.
 - Never print, log, commit, or save the API key in plaintext, command arguments, shell history, prompts, or tool responses. Keychain is the only permitted persistent credential store for the bundled scripts.
 - Never run `security find-generic-password -w` directly in a visible terminal tool call. The credential helper captures its output privately in the Node process and emits only sanitized errors.
-- Save or rotate the key with `swift "$SKILL_DIR"/scripts/store-api-key.swift`. It accepts hidden terminal input. The user must type the key directly into the terminal; stop the agent turn at the secret prompt. Do not collect it with chat or question tools.
+- Save or rotate the key by having the user run `security add-generic-password -U -s dino-skills -a ARK_API_KEY -w` in their own terminal. With `-w` last, macOS prompts for the key with hidden input, so it never appears in command arguments or shell history; never append the key after `-w`. Stop the agent turn at the prompt. Do not collect the key with chat or question tools.
 - If macOS asks for Keychain authorization or a password, the user handles that locally. Do not bypass access controls.
 - Missing credentials or denied access are blockers. Do not search project `.env` files for substitute keys.
 - Reference audio: only use voices the user owns or is authorized to use. Decline imitating real people without consent.
