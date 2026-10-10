@@ -5,22 +5,22 @@ argument-hint: 'Describe the song style/mood, lyrics or theme, and output path'
 user-invocable: true
 disable-model-invocation: false
 license: MIT
-compatibility: 'Node.js 18+. Keychain credential storage requires macOS; elsewhere set MINIMAX_API_KEY.'
+compatibility: 'Node.js 18+ on macOS, Windows or Linux. Key storage uses the macOS Keychain or a Windows DPAPI file; elsewhere set MINIMAX_API_KEY.'
 ---
 
 # MiniMax Music Generation
 
 Generate music, lyrics and covers through the MiniMax Music API (China endpoint) using the bundled script.
 
-`$SKILL_DIR` below means the directory that contains this `SKILL.md` (where the skill was installed, e.g. `.agents/skills/minimax-music`). Always call the scripts through that absolute path.
+`$SKILL_DIR` below means the directory that contains this `SKILL.md` (where the skill was installed, e.g. `.agents/skills/minimax-music`). Always call the scripts through that absolute path. On Windows, run the commands in PowerShell and replace trailing `\` line continuations with a backtick (`` ` ``), or put each command on one line.
 
 ## Security
 
-- Read credentials through `scripts/credentials.mjs`: prefer `MINIMAX_API_KEY`; on macOS, fall back to the generic-password Keychain item with service `dino-skills` and account `MINIMAX_API_KEY`.
+- Read credentials through `scripts/credentials.mjs`: prefer `MINIMAX_API_KEY`; on macOS, fall back to the generic-password Keychain item with service `dino-skills` and account `MINIMAX_API_KEY`; on Windows, to the DPAPI-encrypted file `%APPDATA%\dino-skills\MINIMAX_API_KEY.secure`, which only the current Windows user can decrypt.
 - Never ask the user to paste an API key into chat.
 - Never print, log, commit, or save the API key in plaintext, command arguments, shell history, prompts, or tool responses. Keychain is the only permitted persistent credential store for the bundled scripts.
-- Never run `security find-generic-password -w` directly in a visible terminal tool call. The credential helper captures its output privately in the Node process and emits only sanitized errors.
-- Save or rotate the key by having the user run `security add-generic-password -U -s dino-skills -a MINIMAX_API_KEY -w` in their own terminal. With `-w` last, macOS prompts for the key with hidden input, so it never appears in command arguments or shell history; never append the key after `-w`. Stop the agent turn at the prompt. Do not collect the key with chat or question tools.
+- Never run `security find-generic-password -w` or decrypt the Windows key file directly in a visible terminal tool call. The credential helper captures its output privately in the Node process and emits only sanitized errors.
+- Save or rotate the key by having the user run `security add-generic-password -U -s dino-skills -a MINIMAX_API_KEY -w` in their own terminal. With `-w` last, macOS prompts for the key with hidden input, so it never appears in command arguments or shell history; never append the key after `-w`. Stop the agent turn at the prompt. Do not collect the key with chat or question tools. On Windows, have the user run this in their own PowerShell instead (hidden prompt, encrypted for the current user): `$d = "$env:APPDATA\dino-skills"; New-Item -Force -ItemType Directory $d | Out-Null; Read-Host -AsSecureString MINIMAX_API_KEY | ConvertFrom-SecureString | Set-Content "$d\MINIMAX_API_KEY.secure"`.
 - If macOS asks for Keychain authorization or a password, the user handles that locally. Do not bypass access controls.
 - Missing credentials or denied access are blockers. Do not search project `.env` files for substitute keys.
 - Covers: only use reference songs the user owns or is licensed to adapt.
@@ -42,7 +42,7 @@ Per MiniMax's notice, from 2026-08-20 the paid music and lyrics APIs are no long
    - **Cover**: `cover --audio`, or the two-step flow `cover-preprocess` → edit lyrics → `cover --feature-id`.
 3. Write lyrics and prompts to UTF-8 files and pass `--lyrics-file` / `--prompt-file` for anything multi-line.
 4. Run [music.mjs](./scripts/music.mjs). Generation can take a minute or more. Save each attempt to a new path.
-5. Verify the output exists and is non-empty. On macOS, the user can listen with `afplay <file>`.
+5. Verify the output exists and is non-empty. The user can listen with `afplay <file>` on macOS or `start <file>` on Windows.
 
 ## Usage
 

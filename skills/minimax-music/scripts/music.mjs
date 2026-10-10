@@ -90,7 +90,7 @@ export function parseArgs(argv) {
 async function readText(value, file, name) {
   if (value !== undefined && file) throw new Error(`Use either --${name} or --${name}-file, not both.`);
   const text = file ? await readFile(resolve(file), 'utf8') : value;
-  return text?.trim() || undefined;
+  return text?.replace(/\r\n?/g, '\n').trim() || undefined;
 }
 
 function checkLength(text, name, min, max) {

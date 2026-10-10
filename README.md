@@ -103,7 +103,7 @@ npx skills add dino-proj/dino-skills --skill doubao-seed-audio -g -a github-copi
 
 ## API keys
 
-Skills never ask for keys in chat. Each key is read from an environment variable first, then (on macOS) from the login Keychain under the shared service `dino-skills`, with the variable name as the account.
+Skills never ask for keys in chat. Each key is read from an environment variable first, then from the OS key store: the macOS login Keychain (service `dino-skills`, account = variable name) or, on Windows, a DPAPI-encrypted file under `%APPDATA%\dino-skills`.
 
 | Key | Used by | Where to get it |
 |---|---|---|
@@ -120,6 +120,17 @@ security add-generic-password -U -s dino-skills -a MINIMAX_API_KEY -w
 ```
 
 Keep `-w` as the last option so the key is prompted for instead of appearing in shell history. To remove a key: `security delete-generic-password -s dino-skills -a <KEY_NAME>`.
+
+**Windows** (built-in PowerShell, no extra tools). Run in PowerShell and type the key at the hidden prompt. The key is encrypted with DPAPI into `%APPDATA%\dino-skills\<KEY_NAME>.secure`, readable only by your Windows account; running it again replaces the key:
+
+```powershell
+$d = "$env:APPDATA\dino-skills"; New-Item -Force -ItemType Directory $d | Out-Null
+Read-Host -AsSecureString ARK_API_KEY | ConvertFrom-SecureString | Set-Content "$d\ARK_API_KEY.secure"
+Read-Host -AsSecureString MIMO_API_KEY | ConvertFrom-SecureString | Set-Content "$d\MIMO_API_KEY.secure"
+Read-Host -AsSecureString MINIMAX_API_KEY | ConvertFrom-SecureString | Set-Content "$d\MINIMAX_API_KEY.secure"
+```
+
+To remove a key, delete its `.secure` file.
 
 **Any OS**: export the variable in your shell, e.g. `export ARK_API_KEY=...`. An environment variable takes precedence over the Keychain.
 
