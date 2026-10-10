@@ -1,6 +1,6 @@
 ---
 name: doubao-seedream
-description: 'Generate, edit, or decompose images into layers with Volcengine Ark Doubao Seedream 5.0 Pro. Use for Doubao, Seedream, 火山方舟, 图层拆分, layer_decomposition, or doubao-seedream-5-0-pro-260628 image tasks.'
+description: 'Generate, edit, or decompose images into layers with Volcengine Ark Doubao Seedream 5.0 Pro. Use for Doubao, Seedream, 火山方舟, 图层拆分, layer_decomposition, or doubao-seedream-5-0-pro-260628 image tasks. 使用火山方舟 Doubao Seedream 5.0 Pro 生成、编辑图片或进行图层拆分。'
 argument-hint: 'Describe the image, output path, size, and optional reference images'
 user-invocable: true
 disable-model-invocation: false
