@@ -196,12 +196,12 @@ async function main() {
     return;
   }
   if (options.checkCredentials) {
-    const { source } = await resolveApiKey();
+    const { source } = await resolveApiKey('ARK_API_KEY');
     console.log(`Credentials available (${source}). No API request was made.`);
     return;
   }
   const request = await buildRequest(options);
-  const { apiKey } = await resolveApiKey();
+  const { apiKey } = await resolveApiKey('ARK_API_KEY');
   const redact = text => String(text).replaceAll(apiKey, '[REDACTED]');
 
   const response = await fetch(API_URL, {
